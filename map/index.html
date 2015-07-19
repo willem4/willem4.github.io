@@ -49,6 +49,23 @@ function initialize() {
 
   // Define an info window on the map.
   infoWindow = new google.maps.InfoWindow();
+
+  // Add polygons to the map
+  var layer = new google.maps.FusionTablesLayer({
+      suppressInfoWindows: true,
+      query: {
+          select: 'geometry',
+          from: '1PYPHW0Mrmst1e3GkkrwT_bFyupqepNZCKX6susLZ'
+      },
+      styles: [{
+          polygonOptions: {
+          fillColor: '#5E5E5E',
+          fillOpacity: 0.3
+          }
+        }]
+      });
+  layer.setMap(map); 
+  }
 }
 // Show the new coordinates for the rectangle in an info window.
 

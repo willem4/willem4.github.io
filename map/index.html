@@ -10,82 +10,123 @@
         margin: 0;
         padding: 0;
       }
-
+  .labels {
+     color: red;
+     background-color: white;
+     font-family: "Lucida Grande", "Arial", sans-serif;
+     font-size: 10px;
+     font-weight: bold;
+     text-align: center;
+     width: 65px;     
+     border: 2px solid black;
+     white-space: nowrap;
+   }
     </style>
     <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true"></script>
+    <script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/tags/markerwithlabel/1.1.5/src/markerwithlabel_packed.js"></script>
     <script>
-// This example adds a user-editable rectangle to the map.
-// When the user changes the bounds of the rectangle,
-// an info window pops up displaying the new bounds.
 
-var rectangle;
 var map;
 var infoWindow;
 
 function initialize() {
-  var mapOptions = {
-    center: new google.maps.LatLng(44.5452, -78.5389),
-    zoom: 9
-  };
-  map = new google.maps.Map(document.getElementById('map-canvas'),
-      mapOptions);
+    var myLatLng = new google.maps.LatLng(40.77, -73.97);
+    var myOptions = {
+        zoom: 3,
+        center: myLatLng,
+        mapTypeId: google.maps.MapTypeId.TERRAIN
+    };
 
-  var bounds = new google.maps.LatLngBounds(
-      new google.maps.LatLng(44.490, -78.649),
-      new google.maps.LatLng(44.599, -78.443)
-  );
+    map = new google.maps.Map(document.getElementById("map-canvas"), myOptions);
 
-  // Define the rectangle and set its editable property to true.
-  rectangle = new google.maps.Rectangle({
-    bounds: bounds,
-    editable: true,
-    draggable: true
-  });
+    var polyCoords = [
+        new google.maps.LatLng(40.77839664638698, -73.97309303283691), 
+        new google.maps.LatLng(40.79178417405144, -73.95867347717285), 
+        new google.maps.LatLng(40.78489578327128, -73.94030570983887), 
+        new google.maps.LatLng(40.771896873586385, -73.94562721252441), 
+        new google.maps.LatLng(40.761896873586385, -73.94562721252441), 
+        new google.maps.LatLng(40.76461637311641, -73.96605491638184)
+    ];
 
-  rectangle.setMap(map);
+    polyLabel = "5th Ave";
+    
+    centralPark = [
+        new google.maps.LatLng(40.76435634049009, -73.97395133972168), 
+        new google.maps.LatLng(40.796332719609104, -73.9500904083252), 
+        new google.maps.LatLng(40.80036117114792, -73.95901679992676), 
+        new google.maps.LatLng(40.76799670467514, -73.98133277893066)
+    ];
+    
+    cpLabel = "Central Park";
+    
+    makePolygon(polyCoords, polyLabel);
+    makePolygon(centralPark, cpLabel);
 
-  // Add an event listener on the rectangle.
-  google.maps.event.addListener(rectangle, 'bounds_changed', showNewRect);
+    // Add polygons from fusion table the map
+    var fusionpoly = new google.maps.FusionTablesLayer({
+        suppressInfoWindows: true,
+        query: {
+            select: 'geometry',
+            from: '1PYPHW0Mrmst1e3GkkrwT_bFyupqepNZCKX6susLZ'
+        },
+        styles: [{
+            polygonOptions: {
+            fillColor: '#5E5E5E',
+            fillOpacity: 0.35,
+            }
+          }]
+        });
 
-  // Define an info window on the map.
-  infoWindow = new google.maps.InfoWindow();
+    google.maps.event.addListener(fusionpoly, "mouseover", function(event) {
+        this.setOptions({fillOpacity: 0.8});
 
-  // Add polygons to the map
-  var layer = new google.maps.FusionTablesLayer({
-      //suppressInfoWindows: true,
-      query: {
-          select: 'geometry',
-          from: '1PYPHW0Mrmst1e3GkkrwT_bFyupqepNZCKX6susLZ'
-      },
-      //styles: [{
-      //    polygonOptions: {
-      //    fillColor: '#5E5E5E',
-      //    fillOpacity: 0.3
-      //    }
-      //  }]
-      });
-  layer.setMap(map); 
-  }
+    });
+    google.maps.event.addListener(fusionpoly, "mouseout", function(event) {
+        this.setOptions({fillOpacity: 0.35});
+    });
+
+    fusionpoly.setMap(map); 
+
 }
-// Show the new coordinates for the rectangle in an info window.
 
-/** @this {google.maps.Rectangle} */
-function showNewRect(event) {
-  var ne = rectangle.getBounds().getNorthEast();
-  var sw = rectangle.getBounds().getSouthWest();
+function makePolygon(polyCoords, polyLabel) {
+    var marker = new MarkerWithLabel({
+        position: new google.maps.LatLng(0,0),
+        draggable: false,
+        raiseOnDrag: false,
+        map: map,
+        labelContent: polyLabel,
+        labelAnchor: new google.maps.Point(30, 20),
+        labelClass: "labels", // the CSS class for the label
+        labelStyle: {opacity: 1.0},
+        icon: "http://placehold.it/1x1",
+        visible: false
+     });
 
-  var contentString = '<b>Rectangle moved.</b><br>' +
-      'New north-east corner: ' + ne.lat() + ', ' + ne.lng() + '<br>' +
-      'New south-west corner: ' + sw.lat() + ', ' + sw.lng();
+    var poly = new google.maps.Polygon({
+        paths: polyCoords,
+        strokeColor: "#FF0000",
+        strokeOpacity: 0.8,
+        strokeWeight: 3,
+        fillColor: "#FF0000",
+        fillOpacity: 0.35,
+        map: map
+    });
 
-  // Set the info window's content and position.
-  infoWindow.setContent(contentString);
-  infoWindow.setPosition(ne);
-
-  infoWindow.open(map);
+    google.maps.event.addListener(poly, "mouseover", function(event) {
+        marker.setPosition(event.latLng);
+        marker.setVisible(true);
+        this.setOptions({fillOpacity: 0.8});
+        
+    });
+    google.maps.event.addListener(poly, "mouseout", function(event) {
+        this.setOptions({fillOpacity: 0.35});
+        marker.setVisible(false);
+    });
 }
 
 google.maps.event.addDomListener(window, 'load', initialize);
+
 
     </script>
   </head>
